@@ -180,4 +180,15 @@ class ProductServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cannot be negative");
     }
+
+    @Test
+    @DisplayName("Should return total product count")
+    void testGetTotalProductCount() {
+        when(productRepository.count()).thenReturn(8);
+
+        int result = productService.getTotalProductCount();
+
+        assertThat(result).isEqualTo(8);
+        verify(productRepository).count();
+    }
 }
