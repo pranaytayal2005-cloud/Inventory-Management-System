@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management System</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="navbar-container">
+      <div class="brand">
+        <div class="brand-icon">📦</div>
+        <div class="brand-text">
+          <h1>Inventory Management</h1>
+          <p>Spring Boot 3 REST API &amp; Operations Dashboard</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div id="healthPill" class="health-pill">
+          <span class="health-dot"></span>
+          <span id="healthText">Connecting...</span>
+        </div>
+        <button id="refreshBtn" class="btn btn-outline btn-sm" title="Refresh inventory data">
+          🔄 Refresh
+        </button>
+        <button id="addProductBtn" class="btn btn-primary btn-sm">
+          ➕ Add Product
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-wrapper">
+
+    <!-- KPI Summary Metrics Grid -->
+    <section class="metrics-grid">
+      <!-- Metric 1: Total Products -->
+      <div class="metric-card">
+        <div class="metric-info">
+          <h3>Total Products</h3>
+          <div id="metricTotalProducts" class="metric-value">--</div>
+          <div class="metric-sub">Unique catalog items</div>
+        </div>
+        <div class="metric-icon icon-blue">📦</div>
+      </div>
+
+      <!-- Metric 2: Total Units in Stock -->
+      <div class="metric-card">
+        <div class="metric-info">
+          <h3>Total Units</h3>
+          <div id="metricTotalStock" class="metric-value">--</div>
+          <div class="metric-sub">Sum of inventory stock</div>
+        </div>
+        <div class="metric-icon icon-green">📊</div>
+      </div>
+
+      <!-- Metric 3: Low-Stock Alert -->
+      <div class="metric-card">
+        <div class="metric-info">
+          <h3>Low-Stock Items</h3>
+          <div id="metricLowStock" class="metric-value">--</div>
+          <div class="metric-sub">Stock &le; 10 units</div>
+        </div>
+        <div class="metric-icon icon-amber">⚠️</div>
+      </div>
+
+      <!-- Metric 4: Total Valuation -->
+      <div class="metric-card">
+        <div class="metric-info">
+          <h3>Inventory Value</h3>
+          <div id="metricValuation" class="metric-value">--</div>
+          <div class="metric-sub">Price &times; quantity</div>
+        </div>
+        <div class="metric-icon icon-purple">💰</div>
+      </div>
+    </section>
+
+    <!-- Table Card Container -->
+    <section class="table-card">
+      
+      <!-- Table Controls Bar -->
+      <div class="table-header-controls">
+        <div class="search-filter-group">
+          <!-- Search Input -->
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search by name, category, or ID...">
+          </div>
+
+          <!-- Category Filter Dropdown -->
+          <select id="categoryFilter" class="custom-select" aria-label="Filter by category">
+            <option value="all">All Categories</option>
+          </select>
+
+          <!-- Low Stock Toggle Filter Button -->
+          <button id="stockFilterBtn" class="filter-btn" title="Toggle products with stock <= 10">
+            ⚠️ Low Stock Only
+          </button>
+        </div>
+
+        <!-- Sort Select & Product Count -->
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <select id="sortSelect" class="custom-select" aria-label="Sort products">
+            <option value="id-asc">Sort: ID (Low &rarr; High)</option>
+            <option value="id-desc">Sort: ID (High &rarr; Low)</option>
+            <option value="name-asc">Sort: Name (A &rarr; Z)</option>
+            <option value="name-desc">Sort: Name (Z &rarr; A)</option>
+            <option value="price-asc">Sort: Price (Low &rarr; High)</option>
+            <option value="price-desc">Sort: Price (High &rarr; Low)</option>
+            <option value="qty-asc">Sort: Quantity (Low &rarr; High)</option>
+            <option value="qty-desc">Sort: Quantity (High &rarr; Low)</option>
+          </select>
+          <span id="productCountLabel" style="font-size: 0.8rem; color: var(--gray-500); white-space: nowrap;">
+            Loading...
+          </span>
+        </div>
+      </div>
+
+      <!-- Responsive Products Table -->
+      <div class="table-responsive">
+        <table class="product-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID</th>
+              <th>Product Name &amp; Description</th>
+              <th>Category</th>
+              <th>Unit Price</th>
+              <th>Stock Status</th>
+              <th>Total Value</th>
+              <th style="text-align: right; width: 100px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <!-- Dynamic rows will be rendered here by app.js -->
+          </tbody>
+        </table>
+
+        <!-- Loading State -->
+        <div id="tableLoading" class="table-loading">
+          <div class="spinner"></div>
+          <div>Loading inventory catalog...</div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="tableEmpty" class="table-empty-state" style="display: none;">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-text">No matching products found</div>
+          <div class="empty-subtext">Try adjusting your search terms or clearing active filters.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add / Edit Product Modal -->
+  <div id="productModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="productModalTitle">Add New Product</h2>
+        <button id="productModalClose" class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="productForm" novalidate>
+        <div class="modal-body">
+          <input type="hidden" id="productId">
+
+          <!-- Name Field -->
+          <div class="form-group">
+            <label for="productName">Product Name <span class="required">*</span></label>
+            <input type="text" id="productName" class="form-control" placeholder="e.g. Mechanical Keyboard" maxlength="100" required>
+            <div id="productNameError" class="form-error-msg"></div>
+          </div>
+
+          <!-- Category Field -->
+          <div class="form-group">
+            <label for="productCategory">Category <span class="required">*</span></label>
+            <input type="text" id="productCategory" list="categoryDatalist" class="form-control" placeholder="e.g. Electronics, Furniture" maxlength="50" required>
+            <datalist id="categoryDatalist"></datalist>
+            <div id="productCategoryError" class="form-error-msg"></div>
+          </div>
+
+          <!-- Price & Quantity Row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productPrice">Unit Price ($) <span class="required">*</span></label>
+              <input type="number" id="productPrice" class="form-control" placeholder="0.00" step="0.01" min="0.01" required>
+              <div id="productPriceError" class="form-error-msg"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="productQuantity">Quantity in Stock <span class="required">*</span></label>
+              <input type="number" id="productQuantity" class="form-control" placeholder="0" min="0" step="1" required>
+              <div id="productQuantityError" class="form-error-msg"></div>
+            </div>
+          </div>
+
+          <!-- Description Field -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="productDescription">Description</label>
+            <textarea id="productDescription" class="form-control" rows="3" placeholder="Brief product specifications or notes..." maxlength="500"></textarea>
+            <div id="productDescriptionError" class="form-error-msg"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="productModalCancel" class="btn btn-outline">Cancel</button>
+          <button type="submit" id="saveProductBtn" class="btn btn-primary">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle">Confirm Deletion</h2>
+        <button id="deleteModalClose" class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--gray-700); margin-bottom: 0.75rem;">
+          Are you sure you want to delete <strong id="deleteProductName">this product</strong>?
+        </p>
+        <p style="font-size: 0.8rem; color: var(--danger);">
+          ⚠️ This action will immediately remove the item from active inventory.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="deleteModalCancel" class="btn btn-outline">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Stack -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    Inventory Management System &bull; Spring Boot REST API &bull; Built with Java 17 &amp; Maven
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
