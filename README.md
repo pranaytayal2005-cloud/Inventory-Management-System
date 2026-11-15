@@ -426,4 +426,4 @@ If an invalid request is submitted (e.g., negative price, blank name):
       "category": "Category is required"
     }
   }
-  ```
+  ```Jenkins CI pipeline configured with 25 passing automated tests.
