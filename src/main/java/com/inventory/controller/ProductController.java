@@ -69,6 +69,16 @@ public class ProductController {
     }
 
     /**
+     * Get the total number of products in inventory.
+     * GET /api/products/count
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Integer> getProductCount() {
+        int count = productService.getTotalProductCount();
+        return ResponseEntity.ok(count);
+    }
+
+    /**
      * Search product by ID.
      * GET /api/products/{id}
      */

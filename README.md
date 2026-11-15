@@ -14,6 +14,7 @@ A Spring Boot 3 RESTful API for inventory management using Java 17 and Maven. Th
   - Search by product ID (`GET /api/products/{id}`)
   - Update product (`PUT /api/products/{id}`)
   - Delete product (`DELETE /api/products/{id}`)
+  - Product count (`GET /api/products/count`)
 - **Low-Stock Query**: Filter products below a configurable stock threshold (`GET /api/products/low-stock?threshold=10`).
 - **Health Check**: Service status and inventory metrics (`GET /api/health`).
 - **Input Validation**: Jakarta Bean Validation (`@NotBlank`, `@Positive`, `@Min`, `@Size`) with standardized HTTP 400 JSON error details.
@@ -281,7 +282,25 @@ Default Base URL: `http://localhost:8080`
 
 ---
 
-### 5. Add New Product
+### 5. Product Count
+- **Endpoint**: `GET /api/products/count`
+- **Description**: Returns the total number of products currently in inventory.
+- **PowerShell**:
+  ```powershell
+  Invoke-RestMethod -Uri "http://localhost:8080/api/products/count" -Method Get
+  ```
+- **cURL**:
+  ```bash
+  curl -X GET http://localhost:8080/api/products/count
+  ```
+- **Response `200 OK`**:
+  ```
+  8
+  ```
+
+---
+
+### 6. Add New Product
 - **Endpoint**: `POST /api/products`
 - **Header**: `Content-Type: application/json`
 - **Request Body**:
@@ -329,7 +348,7 @@ Default Base URL: `http://localhost:8080`
 
 ---
 
-### 6. Update Product
+### 7. Update Product
 - **Endpoint**: `PUT /api/products/{id}`
 - **Header**: `Content-Type: application/json`
 - **Request Body**:
@@ -376,7 +395,7 @@ Default Base URL: `http://localhost:8080`
 
 ---
 
-### 7. Delete Product
+### 8. Delete Product
 - **Endpoint**: `DELETE /api/products/{id}`
 - **PowerShell**:
   ```powershell
@@ -390,7 +409,7 @@ Default Base URL: `http://localhost:8080`
 
 ---
 
-### 8. Validation Error Response Example
+### 9. Validation Error Response Example
 If an invalid request is submitted (e.g., negative price, blank name):
 - **Response `400 Bad Request`**:
   ```json

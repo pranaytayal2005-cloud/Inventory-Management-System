@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -104,6 +105,17 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].name", is("Keyboard")))
                 .andExpect(jsonPath("$[0].quantity", is(2)));
+    }
+
+    @Test
+    @DisplayName("GET /api/products/count - Should return total number of products")
+    void testGetProductCount_ReturnsTotalCount() throws Exception {
+        when(productService.getTotalProductCount()).thenReturn(8);
+
+        mockMvc.perform(get("/api/products/count"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("8"))
+                .andExpect(jsonPath("$", is(8)));
     }
 
     @Test
