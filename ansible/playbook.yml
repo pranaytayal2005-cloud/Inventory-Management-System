@@ -1,0 +1,52 @@
+---
+- name: Configure Inventory Management System Environment
+  hosts: local
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Application settings
+    app_name: "inventory-management-system"
+    app_port: 8080
+    app_environment: "production"
+
+    # Directory and file paths
+    # Defaults to user home directory to allow execution without root privileges,
+    # or can be overridden via extra vars (e.g., -e "config_dir=/etc/inventory-management")
+    config_dir: "{{ lookup('env', 'HOME') }}/inventory-management/config"
+    config_file: "{{ config_dir }}/application.properties"
+
+  tasks:
+    - name: Ensure deployment configuration directory exists
+      ansible.builtin.file:
+        path: "{{ config_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Manage application configuration file
+      ansible.builtin.copy:
+        dest: "{{ config_file }}"
+        content: |
+          # ==========================================
+          # Inventory Management System Configuration
+          # Managed by Ansible - Do not edit manually
+          # ==========================================
+          app.name={{ app_name }}
+          server.port={{ app_port }}
+          app.environment={{ app_environment }}
+          spring.application.name={{ app_name }}
+          inventory.default-low-stock-threshold=10
+        mode: '0644'
+
+    - name: Verify application configuration file state
+      ansible.builtin.stat:
+        path: "{{ config_file }}"
+      register: config_stat
+
+    - name: Display configuration status
+      ansible.builtin.debug:
+        msg:
+          - "Deployment Directory : {{ config_dir }}"
+          - "Configuration File   : {{ config_file }}"
+          - "File Exists          : {{ config_stat.stat.exists }}"
+          - "File Size (bytes)    : {{ config_stat.stat.size }}"
