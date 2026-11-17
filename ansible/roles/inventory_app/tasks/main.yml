@@ -1,0 +1,101 @@
+---
+- name: Require a supported systemd target and valid application port
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == 'Debian'
+      - ansible_facts.service_mgr == 'systemd'
+      - app_port | int > 0
+      - app_port | int < 65536
+    fail_msg: Use Debian/Ubuntu with systemd enabled and a port between 1 and 65535.
+
+- name: Check controller build artifact before changing target
+  ansible.builtin.stat:
+    path: "{{ app_jar_src }}"
+  delegate_to: localhost
+  become: false
+  register: app_artifact
+
+- name: Require the packaged Spring Boot JAR
+  ansible.builtin.assert:
+    that:
+      - app_artifact.stat.exists
+      - app_artifact.stat.isreg | default(false)
+    fail_msg: Run mvn clean package in the repository root before deploying.
+
+- name: Install Java runtime
+  ansible.builtin.apt:
+    name: "{{ java_package }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create application group
+  ansible.builtin.group:
+    name: "{{ app_group }}"
+    system: true
+
+- name: Create unprivileged application user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create application and configuration directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: "{{ app_group }}"
+    mode: '0750'
+  loop:
+    - "{{ app_dir }}"
+    - "{{ config_dir }}"
+
+- name: Copy runnable application JAR
+  ansible.builtin.copy:
+    src: "{{ app_jar_src }}"
+    dest: "{{ app_dir }}/app.jar"
+    owner: root
+    group: "{{ app_group }}"
+    mode: '0640'
+  notify: Restart inventory application
+
+- name: Configure application
+  ansible.builtin.template:
+    src: application.properties.j2
+    dest: "{{ config_dir }}/application.properties"
+    owner: root
+    group: "{{ app_group }}"
+    mode: '0640'
+  notify: Restart inventory application
+
+- name: Configure systemd service
+  ansible.builtin.template:
+    src: inventory.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart inventory application
+
+- name: Apply pending service changes before health verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start application service
+  ansible.builtin.systemd_service:
+    name: "{{ app_name }}"
+    enabled: true
+    state: started
+
+- name: Verify application health on target
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ app_port }}/api/health"
+    return_content: true
+    status_code: 200
+  register: app_health
+  until: (app_health.status | default(0)) == 200 and (app_health.json | default({})).get('status', '') == 'UP'
+  retries: 30
+  delay: 2
+  when: not ansible_check_mode
