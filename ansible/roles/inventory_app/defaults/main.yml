@@ -1,0 +1,10 @@
+---
+app_name: inventory-management-system
+app_user: inventory-app
+app_group: inventory-app
+app_port: 8080
+app_environment: production
+app_dir: /opt/inventory-management
+config_dir: /etc/inventory-management
+app_jar_src: "{{ playbook_dir }}/../target/inventory-management-system-1.0.0.jar"
+java_package: openjdk-17-jre-headless

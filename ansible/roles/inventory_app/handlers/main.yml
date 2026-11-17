@@ -1,0 +1,6 @@
+---
+- name: Restart inventory application
+  ansible.builtin.systemd_service:
+    name: "{{ app_name }}"
+    daemon_reload: true
+    state: restarted

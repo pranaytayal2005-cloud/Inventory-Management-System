@@ -1,0 +1,22 @@
+# Managed by Ansible
+[Unit]
+Description=Inventory Management Spring Boot application
+After=network.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_dir }}
+ExecStart=/usr/bin/java -jar {{ app_dir }}/app.jar --spring.config.additional-location=file:{{ config_dir }}/application.properties
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
